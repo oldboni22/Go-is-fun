@@ -15,11 +15,11 @@ type pooledEncoder struct {
 	Encoder *json.Encoder
 }
 
-func (encoder *pooledEncoder) Encode(value any) error {
+func (encoder *pooledEncoder) encode(value any) error {
 	return encoder.Encoder.Encode(value)
 }
 
-func (encoder *pooledEncoder) Reset() {
+func (encoder *pooledEncoder) reset() {
 	encoder.Buffer.Reset()
 }
 
@@ -64,11 +64,11 @@ func (client *ApiClient) SendRequest[TRequest any, TResponse any](
 	if params.Body != nil {
 		var encoder = encoderPool.Get().(*pooledEncoder)
 		defer func() {
-			encoder.Reset()
+			encoder.reset()
 			encoderPool.Put(encoder)
 		}()
 
-		if err := encoder.Encode(params.Body); err != nil {
+		if err := encoder.encode(params.Body); err != nil {
 			return nil, err
 		}
 
