@@ -15,6 +15,14 @@ type pooledEncoder struct {
 	Encoder *json.Encoder
 }
 
+func (encoder *pooledEncoder) Encode(value any) error {
+	return encoder.Encoder.Encode(value)
+}
+
+func (encoder *pooledEncoder) Reset() {
+	encoder.Buffer.Reset()
+}
+
 var encoderPool = sync.Pool{
 	New: func() any {
 		buffer := new(bytes.Buffer)
@@ -54,18 +62,18 @@ func (client *ApiClient) SendRequest[TRequest any, TResponse any](
 	}
 
 	if params.Body != nil {
-		var pooled = encoderPool.Get().(*pooledEncoder)
+		var encoder = encoderPool.Get().(*pooledEncoder)
 		defer func() {
-			pooled.Buffer.Reset()
-			encoderPool.Put(pooled)
+			encoder.Reset()
+			encoderPool.Put(encoder)
 		}()
 
-		if err := pooled.Encoder.Encode(params.Body); err != nil {
+		if err := encoder.Encode(params.Body); err != nil {
 			return nil, err
 		}
 
-		request.Body = io.NopCloser(pooled.Buffer)
-		request.ContentLength = int64(pooled.Buffer.Len())
+		request.Body = io.NopCloser(encoder.Buffer)
+		request.ContentLength = int64(encoder.Buffer.Len())
 	}
 
 	if params.Header != nil {
