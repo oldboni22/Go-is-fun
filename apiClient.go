@@ -11,16 +11,16 @@ import (
 )
 
 type pooledEncoder struct {
-	Buffer  *bytes.Buffer
-	Encoder *json.Encoder
+	buffer  *bytes.Buffer
+	encoder *json.Encoder
 }
 
 func (encoder *pooledEncoder) encode(value any) error {
-	return encoder.Encoder.Encode(value)
+	return encoder.encoder.Encode(value)
 }
 
 func (encoder *pooledEncoder) reset() {
-	encoder.Buffer.Reset()
+	encoder.buffer.Reset()
 }
 
 var encoderPool = sync.Pool{
@@ -28,8 +28,8 @@ var encoderPool = sync.Pool{
 		buffer := new(bytes.Buffer)
 
 		return &pooledEncoder{
-			Buffer:  buffer,
-			Encoder: json.NewEncoder(buffer),
+			buffer:  buffer,
+			encoder: json.NewEncoder(buffer),
 		}
 	},
 }
@@ -72,8 +72,8 @@ func (client *ApiClient) SendRequest[TRequest any, TResponse any](
 			return nil, err
 		}
 
-		request.Body = io.NopCloser(encoder.Buffer)
-		request.ContentLength = int64(encoder.Buffer.Len())
+		request.Body = io.NopCloser(encoder.buffer)
+		request.ContentLength = int64(encoder.buffer.Len())
 	}
 
 	if params.Header != nil {
