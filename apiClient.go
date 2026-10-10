@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 )
 
@@ -38,7 +39,7 @@ type ApiClientRequestParameters struct {
 
 func NewApiClient(baseUrl string) *ApiClient {
 	return &ApiClient{
-		baseUrl: baseUrl,
+		baseUrl: strings.TrimRight(baseUrl, "/"),
 	}
 }
 
@@ -46,7 +47,7 @@ func (client *ApiClient) SendRequest[TRequest any, TResponse any](
 	context context.Context,
 	params ApiClientRequestParameters) (*TResponse, error) {
 
-	fullUrl := client.baseUrl + params.Path
+	fullUrl := client.baseUrl + "/" + strings.TrimLeft(params.Path, "/")
 	request, err := http.NewRequestWithContext(context, params.Method, fullUrl, nil)
 	if err != nil {
 		return nil, err
